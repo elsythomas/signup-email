@@ -1,0 +1,7 @@
+<h1>Admin Dashboard</h1>
+<h2>All Users</h2>
+<ul>
+    {% for member in members %}
+        <li>{{ member.name }} - {{ member.email }} ({{ member.get_roleid_display }})</li>
+    {% endfor %}
+</ul>
