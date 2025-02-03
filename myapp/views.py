@@ -131,7 +131,7 @@ def signup(request):
 def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        password =request.POST.get('password')
+        password =request.POST.get('password') 
         
         try:
             data = Student.objects.get(email=email, password = password) 
