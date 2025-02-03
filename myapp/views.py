@@ -134,7 +134,7 @@ def login(request):
         password =request.POST.get('password')
         
         try:
-            data = Student.objects.get(email=email, password = password)
+            data = Student.objects.get(email=email, password = password) 
 
             # data = LoginAdminSerializer(data).data
 
