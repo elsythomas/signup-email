@@ -195,7 +195,7 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'elsythomas36987@gmail.com'
 EMAIL_HOST_PASSWORD = 'ncjw nahp asvy vocr'
 
-# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Default sender email
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Default sender email  dekrevcstfzwjzzl
 # EMAIL_HOST_PASSWORD =os.getenv('EMAIL_HOST_PASSWORD')   # Use environment variables for security
 # ALLOWED_HOSTS=['elsythomas36987@gmail.com','locahost','127.0.0.1']
 
