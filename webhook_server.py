@@ -19,7 +19,7 @@ def webhook():
     if 'commits' in data:
         msg = Message(
             subject="New GitHub Push",
-            recipients=["your-email@gmail.com"],
+            recipients=["elsythomas36987@gmail.com"],
             body=f"Repository: {data['repository']['full_name']}\n"
                  f"Pushed by: {data['pusher']['name']}\n"
                  f"Commit Message: {data['head_commit']['message']}"
