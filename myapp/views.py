@@ -20,6 +20,8 @@ from .permissions import IsAdminOrTeacher
 from django.http import HttpResponse
 from .permissions import IsAdmin 
 from .models import Role
+from .models import Student 
+from myapp.models import Student
 from django.core.mail import send_mail
 from django.conf import settings 
 # from .permissions import check_admin_permissions
@@ -50,8 +52,7 @@ def add_member(request):
         # Redirect or return a response
         return HttpResponse(f" {name} added successfully!")
 
-    return render(request, 'myapp/add_member')
-
+    # return render(request, 'addmember.html')
 # @csrf_exempt
 @api_view(['POST'])
 def role_create(request):
@@ -67,9 +68,12 @@ def role_create(request):
     return HttpResponse(f"{name} added sucessfully")
     
     
-# @csrf_exempt
-@api_view(['POST'])
+@csrf_exempt
+@api_view(['POST','GET'])
 def signup(request):
+    if request.method == 'GET':
+        return render(request, 'login.html') 
+    
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
@@ -84,11 +88,15 @@ def signup(request):
         # return HttpResponse("succcss")
       
     if Student.objects.filter(email=email).exists():
-        return HttpResponse(f"correct details already exists")
+        return HttpResponse(f" member already exists")
         
     hashed_password = make_password(password)
     student = Student(name=name,email=email,password=hashed_password,Role=role)
     student.save()
+    
+    if request.user.Role.name not in ['admin', 'teacher']:
+        return Response({"error": "You do not have permission to create a user."}, status=status.HTTP_403_FORBIDDEN)
+    # return render(request, 'signup.html')
         # user = LoginSerializer(Student)
         # Refresh = RefreshToken.for_user(user)
         # acess =Refresh.access_token
@@ -97,10 +105,10 @@ def signup(request):
             # "acess":str( acess),
             # "refresh":str( Refresh)
             
-        # },status= status.HTTP_201_CREATED)
+        # },status= status.HTTP_201_CREATED
                 
     subject = "Welcome to Our Platform"
-    message = f"Hi {name},\n\nWelcome! Your account has been created successfully.\n\nBest regards,\nYour Team"
+    message = f"Hi {name},\n\nWelcome! Your account has been created successfully.\n\nHEXAGONS COLLEGE,\none way college"
     from_email = 'elsythomas36987@gmail.com'
     recipient_list = [email]
     print(recipient_list)
@@ -114,8 +122,12 @@ def signup(request):
     return Response({
     "message": "User registered successfully.",
     "email_status": email_status
+    
 }, status=status.HTTP_201_CREATED)
+    
 
+
+    
 # return new_func(email_status)
 
         # send_mail(subject, message, from_email, recipient_list)
@@ -124,8 +136,61 @@ def signup(request):
         #     "data": "Data created successfully, email sent!"
         # }, status=status.HTTP_201_CREATED)
         
-    
-    
+from django.shortcuts import render
+from django.contrib.auth.hashers import check_password
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import Student
+
+@api_view(['GET', 'POST'])
+def login(request):
+    if request.method == 'GET':
+        return render(request, 'signup.html')  # Show the login page
+
+    if request.method == 'POST':
+        email = request.POST.get('email')  # Use request.POST for Django forms
+        password = request.POST.get('password')
+
+        try:
+            student = Student.objects.get(email=email)
+            if check_password(password, student.password):
+                refresh = RefreshToken.for_user(student)
+                access = refresh.access_token
+                
+                return JsonResponse({
+                    'refresh': str(refresh),
+                    'access': str(access),
+                })
+            else:
+                return JsonResponse({'details': 'Invalid Credentials'}, status=400)
+        except Student.DoesNotExist:
+            return JsonResponse({'details': 'Invalid Credentials'}, status=400)
+  
+# from django.contrib.auth.hashers import check_password
+# @api_view(['GET','POST'])
+# def login(request):
+#     if request.method == 'POST':
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+        
+#         try:
+#             student = Student.objects.get(email=email)
+#             if check_password(password, student.password):  # Hash check
+#                 refresh = RefreshToken.for_user(student)
+#                 access = refresh.access_token
+                
+#                 return Response({
+#                     'refresh': str(refresh),
+#                     'access': str(access),
+#                 })
+#             else:
+#                 return Response({'details': 'Invalid Credentials'}, status=400)
+#         except Student.DoesNotExist:
+#             return Response({'details': 'Invalid Credentials'}, status=400)
+
+#     return render(request, 'signup.html')
     
 @api_view(['POST'])
 def login(request):
@@ -134,11 +199,11 @@ def login(request):
         password =request.POST.get('password') 
         
         try:
-            data = Student.objects.get(email=email, password = password) 
-
+            student = Student.objects.get(email=email, password = password) 
+    
             # data = LoginAdminSerializer(data).data
 
-            refresh = RefreshToken.for_user(data)
+            refresh = RefreshToken.for_user(student)
             access = refresh.access_token
             
             return Response({
@@ -149,30 +214,58 @@ def login(request):
             return Response (
                 {'details' : 'Invalid Credentials'}
             )    
+    return render(request, 'signup.html')
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Student, Role  # Ensure Role model is imported
 
-@api_view(['PUT'])
-# @csrf_exempt
-@permission_classes([IsAuthenticated, IsAdminOrTeacher])
+@login_required
 def user_edit(request, user_id):
-    try:
-        user = Student.objects.get(id=user_id)
-        user.name = request.data.get('name', user.name)
-        user.email = request.data.get('email', user.email)
-        user.password = (request.data.get('password', user.password))
-        
-        # Update role if provided
-        role_id = request.data.get('role_id')
-        if role_id:
-            role = Role.objects.filter (id=role_id).first()
-            if not role:
-                return Response({"error": "Invalid role ID."}, status=status.HTTP_400_BAD_REQUEST)
-            user.Role = role
-        
-        user.save()
-        return Response({"message": f"User {user.name} updated successfully."}, status=status.HTTP_200_OK)
+    user = get_object_or_404(Student, id=user_id)
+    roles = Role.objects.all()
 
-    except Student.DoesNotExist:
-        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "POST":
+        user.name = request.POST.get('name', user.name)
+        user.email = request.POST.get('email', user.email)
+        
+        password = request.POST.get('password')
+        if password:
+            user.set_password(password)  # Hash the password before saving
+
+        role_id = request.POST.get('role_id')
+        if role_id:
+            role = Role.objects.filter(id=role_id).first()
+            if role:
+                user.Role = role
+
+        user.save()
+        return redirect('userlist.html')  # Redirect back to the user list after updating
+
+    return render(request, 'useredit.html', {'user': user, 'roles': roles})
+
+# @api_view(['PUT'])
+# # @csrf_exempt
+# @permission_classes([IsAuthenticated, IsAdminOrTeacher,IsAdmin])
+# def user_edit(request, user_id):
+#     try:
+#         user = Student.objects.get(id=user_id)
+#         user.name = request.data.get('name', user.name)
+#         user.email = request.data.get('email', user.email)
+#         user.password = (request.data.get('password', user.password))
+        
+#         # Update role if provided
+#         role_id = request.data.get('role_id')
+#         if role_id:
+#             role = Role.objects.filter (id=role_id).first()
+#             if not role:
+#                 return Response({"error": "Invalid role ID."}, status=status.HTTP_400_BAD_REQUEST)
+#             user.Role = role
+        
+#         user.save()
+#         return Response({"message": f"User {user.name} updated successfully."}, status=status.HTTP_200_OK)
+
+#     except Student.DoesNotExist:
+#         return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 
@@ -191,6 +284,7 @@ def user_delete(request, user_id):
     
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdminOrTeacher])
+
 def user_list(request, user_id=None):
     if user_id:
         try:
@@ -207,6 +301,11 @@ def user_list(request, user_id=None):
     else:
         users = Student.objects.all().values("id", "name", "email", "Role__name")
         return Response({"users": list(users)}, status=status.HTTP_200_OK)
+        
+def user_list_html(request):
+    users = Student.objects.all()
+    return render(request, 'userlist.html', {"users": users})
+
 
 
 
@@ -215,8 +314,8 @@ def user_list(request, user_id=None):
 @permission_classes([IsAuthenticated])  # Ensure the user is authenticated
 def user_model(request):
     # Check if the current user is an admin or teacher
-    if request.user.Role.name not in ['admin', 'teacher']:
-        return Response({"error": "You do not have permission to create a user."}, status=status.HTTP_403_FORBIDDEN)
+    # if request.user.Role.name not in ['admin', 'teacher']:
+    #     return Response({"error": "You do not have permission to create a user."}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'POST':
         name = request.data.get('name')
@@ -306,22 +405,79 @@ def admin_only_api(request):
 #         return Response({"message": "Welcome, Admin! You have access to this API."})
 #     else:
 #         return Response({"detail": "Permission denied. Admin access required."}, status=403)
-from rest_framework.decorators import api_view
+# from rest_framework.decorators import api_view
+# from rest_framework.response import Response
+# from rest_framework import status
+# from .serializers import LoginSerializer
+# from .permissions import IsAuthenticatedAndInAdminGroup
+# from rest_framework.decorators import api_view, permission_classes
+# from rest_framework.response import Response
+# from rest_framework import status
+# from .serializers import LoginAdminSerializer # Ensure correct serializer
+# from .permissions import IsAuthenticatedAndInAdminGroup
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticatedAndInAdminGroup]) 
+# def user_create(request):
+#     serializer = LoginAdminSerializer(data=request.data)  # Use a proper serializer
+    
+#     if serializer.is_valid():
+#         try:
+#             serializer.save()
+#             return Response({"message": "User created successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from django.middleware.csrf import get_token
 from .serializers import LoginSerializer
+from .permissions import IsAuthenticatedAndInAdminGroup
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticatedAndInAdminGroup]) 
+# def user_create(request):
+#     serializer = LoginSerializer(data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response({"message": "User created successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# @api_view(['GET'])
+# def get_csrf_token(request):
+#     return Response({"csrfToken": get_token(request)})
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticatedAndInAdminGroup]) 
 def user_create(request):
-    return Response("sucess")
+    # return Response("sucess")
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "User created successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# from django.shortcuts import render, redirect
+# from django.contrib.auth.models import User
+# from django.contrib.auth.decorators import login_required
+# from django.contrib import messages
 
+# @login_required
+# def user_create(request):
+#     if request.method == "POST":
+#         username = request.POST.get("username")
+#         password = request.POST.get("password")
+
+#         if User.objects.filter(username=username).exists():
+#             messages.error(request, "Username already exists!")
+#         else:
+#             user = User.objects.create_user(username=username, password=password)
+#             messages.success(request, "User created successfully!")
+#             return redirect("userlist.html")  # Redirect to the user list page
+
+#     return render(request, "usercreate.html")
 
 
 from rest_framework.permissions import IsAuthenticated
@@ -334,7 +490,7 @@ def student_profile(request):
     print(student)
     return Response ("sucess")
     return Response({
-        "name": student.name,
+         "name": student.name,
         "email": student.email,
         "role": student.Role.name if student.Role else None,
     })
@@ -384,6 +540,7 @@ def admin_crud(request, admin_id=None):
             return Response({"message": "Admin deleted successfully."})
         except Admin.DoesNotExist:
             return Response({"error": "Admin not found."}, status=status.HTTP_404_NOT_FOUND)
+        # return render(request, 'login.html')
 
 
 # Role CRUD
@@ -465,7 +622,7 @@ def student_crud(request, student_id=None):
                 return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
         else:
             students = Student.objects.all().values()
-            return Response({"students": list(students)})
+            return render(request, 'userdetails.html', {"students": students})
 
     if request.method == 'PUT':
         try:
@@ -555,12 +712,150 @@ def delete_role(request, role_id):
     role.delete()
     return HttpResponse("Role deleted successfully!")
 
+import bs4
+from django.http import JsonResponse
+from bs4 import BeautifulSoup
+import requests
+from urllib.parse import urljoin
+
+def extract_title(request):
+    url = 'https://en.wikipedia.org/wiki/Web_scraping'
+    base_url = "http://127.0.0.1:8000"
+    
+    try:
+        reqs = requests.get(url)
+        reqs.raise_for_status()  # Raise error for bad responses
+        
+        soup = BeautifulSoup(reqs.text, 'html.parser')
+
+        # Extract title
+        title = soup.title.string if soup.title else "No title found"
+
+        # Extract links
+        links = [urljoin(base_url, link.get('href')) for link in soup.find_all('a') if link.get('href')]
+
+        return JsonResponse({"title": title, "links": links})
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 
 
 
+from django.shortcuts import render, get_object_or_404
+from .models import Student
 
+def student_details(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    return render(request, 'students.html', {'student': student})
+
+# import requests
+# from bs4 import BeautifulSoup
+ 
+ 
+# url = 'http://127.0.0.1:8000/myapp/admin_crud/'
+# reqs = requests.get(url)
+# soup = BeautifulSoup(reqs.text, 'html.parser')
+ 
+# urls = []
+# for link in soup.find_all('a'):
+#     print(link.get('href'))
+# import requests
+# from bs4 import BeautifulSoup
+
+# def extract_title_links(url):
+#     headers = {"User-Agent": "Mozilla/5.0"}  # Helps avoid blocking
+#     response = requests.get(url, headers=headers)
+
+#     if response.status_code == 200:
+#         soup = BeautifulSoup(response.text, 'html.parser')
+        
+#         # Extract Title
+#         title = soup.title.string if soup.title else "No title found"
+        
+#         # Extract Links
+#         links = [a['href'] for a in soup.find_all('a', href=True)]
+
+#         return {"title": title, "links": links}
+#     else:
+#         return {"error": f"Failed to retrieve page, status code: {response.status_code}"}
+
+# # Example Usage
+# url = "http://127.0.0.1:8000/myapp/login/"
+# result = extract_title_links(url)
+# print(result)
+
+
+# # Importing the required modules
+# import requests
+# from bs4 import BeautifulSoup
+
+# # Function to extract the title from a webpage
+# def get_webpage_title(url):
+#     try:
+#         # Making a request to the target URL
+#         reqs = requests.get(url)
+        
+#         # Checking if the request was successful
+#         if reqs.status_code == 200:
+#             # Parsing the HTML content using BeautifulSoup
+#             soup = BeautifulSoup(reqs.text, 'html.parser')
+            
+#             # Extracting and displaying the title
+#             title_tag = soup.find('title')
+#             if title_tag:
+#                 print("Title of the website is:", title_tag.get_text())
+#             else:
+#                 print("No title found on the webpage.")
+#         else:
+#             print(f"Failed to fetch the webpage. Status code: {reqs.status_code}")
+#     except Exception as e:
+#         print("An error occurred:", e)
+
+# # Example usage
+# url = 'http://127.0.0.1:8000/myapp/login/'  # Replace with your target URL
+# get_webpage_title(url)
+
+
+# # importing the modules
+# import requests
+# from bs4 import BeautifulSoup
+ 
+# # target url
+# url = 'http://127.0.0.1:8000/myapp/student_crud/'
+ 
+# # making requests instance
+# reqs = requests.get(url)
+ 
+# # using the BeautifulSoup module
+# soup = BeautifulSoup(reqs.text, 'html.parser')
+ 
+# # displaying the title
+# print("Title of the website is : ")
+# for title in soup.find_all('title'):
+#     print(title.get_text())
+
+# class MyCronJob(CronJobBase):
+#     RUN_EVERY_MINS = 1
+
+#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+#     code = 'my_app.my_cron_job'    # not sure what this is supposed to be?
+
+#     def do(self):
+#         print('Executed')
+
+
+# from django_cron import CronJobBase, Schedule
+
+# class MyCronJob(CronJobBase):
+#     RUN_EVERY_MINS = 1  # Run every 1 minute
+
+#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+#     code = 'myapp.MyCronJob'  # Change 'myapp' to your actual Django app name
+
+#     def do(self):
+        # print('Executed')
 
 
 
@@ -895,4 +1190,3 @@ def delete_role(request, role_id):
 # def token_validation():
 #     toke
 #     pass
-

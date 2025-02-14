@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+# import environ
+# env =environ.Env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,7 +34,9 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'myapp',
+    # 'django_crontab',
     'rest_framework',
+    'corsheaders',
     'rest_framework_simplejwt',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -55,10 +60,12 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'myproject.urls'
 
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all domains to access the API
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -147,8 +154,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
-}
+    ]}
+
+
 
 
 AUTH_USER_MODEL = 'myapp.Student'
@@ -216,3 +224,39 @@ EMAIL_HOST_PASSWORD = 'ncjw nahp asvy vocr'
 #         },
 #     },
 # }
+
+# import os
+
+# Celery settings
+# CELERY_BROKER_URL = "redis://localhost:6379/0"  # Redis as broker
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+
+# CRON_CLASSES = [
+#     "myapp.views.MyCronJob",
+    
+# ]
+# CRONJOBS = [
+#     ('*/1 * * * *', 'text.cron.add_text')
+# ]
+# ('*/1 * * * *', 'text.cron.add_text')
+# CRONJOBS = [
+#     ('*/5 * * * *', 'myapp.cron.my_scheduled_job')
+# ]
+# CRONJOBS = [
+#     ('*/5 * * * *', 'myapp.cron.other_scheduled_job', ['arg1', 'arg2'], {'verbose': 0}),
+#     ('0   4 * * *', 'django.core.management.call_command', ['clearsessions']),
+# ]
+
+# CRONJOBS = [
+#     ('*/1 * * * *', 'myapp.cron.MyCronJob')
+# ]
+# CRONJOBS = [
+#     ('0 0 1 * *', 'myapp.cron.other_cron_job', ['pos_arg1', 'pos_arg2'], {'verbose': 'key_arg'}),
+# ]
+
+
+
+# settings.py
+
+LOGIN_URL = '/myapp/login/'  # Redirects unauthenticated users to this URL

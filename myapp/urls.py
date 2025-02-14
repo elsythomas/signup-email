@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
-from.views import add_member,role_create,signup,login,admin_only_api,user_create,admin_crud,role_crud,student_crud,user_edit,user_delete,user_list,user_model,get_all_roles,get_role,update_role,delete_role
+# from .views import user_create
+
+from django.contrib.auth.views import LoginView
+from.views import add_member,role_create,signup,login,admin_only_api,user_create,user_list_html,admin_crud,role_crud,extract_title,student_crud,user_edit,user_delete,user_list,user_model,get_all_roles,get_role,update_role,delete_role,student_details
 
 # from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 # from .views import login_view, protected_view
@@ -11,13 +14,15 @@ urlpatterns = [
     # path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     # path('protected/', protected_view, name='protected'),
-    # path('myfirst.html/',views.add_member,name='myfirst.html'),
+    # path('addmember.html/',add_member,name='addmember.html'),
     # path('login_view/',views.login_view, name='login_view'),
     # # path('login_view/<int:id>/', views.login_view, name='login_view'),
     path('add-member/', add_member, name='add_member'),
     path('role-create/', role_create ,name='role_create'),
     path('signup/', signup,  name='signup'),
+    path('login.html/', signup,  name='login.html'),
     path('login/',login,name='login'),
+    path('signup.html/', login,  name='signup.html'),
     path('user_create/', user_create,name='user_create'),
     path('admin_crud/',admin_crud,name='admin_crud'),
     path('admin_crud/<int:id>/', admin_crud, name='admin_crud'),
@@ -28,9 +33,14 @@ urlpatterns = [
     # path('secure-data/', secure_data, name='secure_data'),
     # path('token_validation/',token_validation,name='token_validation'),
     path('admin_only_api/',admin_only_api,name='admin_only_api'),
-    path('user_edit/<int:user_id>/',user_edit,name='user_edit'),
+    # path('user_edit/<int:user_id>/',user_edit,name='user_edit'),
+    # # path('users/edit/<int:user_id>/', user_edit, name='user_edit'),
+    path('users/edit/<int:user_id>/', user_edit, name='user_edit'),
+    path('users/', user_list_html, name='user_list_html'),
     path('user_delete/<int:user_id>/',user_delete,name='user_delete'),
     path('user_list/<int:user_id>/',user_list,name='user_list'),
+    # path('users/',user_list,name='userlist')
+    path('users/', user_list_html, name='user_list'),
     path('user_model/',user_model,name='user_model'),
     path('create_role/',views.create_role,name='create_role'),
     # path('profile/', student_profile, name='student_profile')
@@ -39,8 +49,13 @@ urlpatterns = [
     path('get_role/<int:role_id>/',get_role,name='get_role'),
     path('update_role/<int:role_id>/',update_role,name='update_role'),
     path('delete_role/<int:role_id>/',delete_role,name='delete_role'),
-    
-    
+    path('extract_title/',extract_title,name='extract_title'),
+    path('loginsample/', LoginView.as_view(template_name='sample.html'), name='login'),
+    path('users/create/', user_create, name='user_create'),
+    path('students/', student_crud, name='student_list_create'),
+    path('students/<int:student_id>/', student_crud, name='student_detail'),
+    # path('role-management/', role_management_view, name='role_management'),
+    path('student/<int:student_id>/', student_details, name='student_details'),
     
     
     

@@ -7,7 +7,7 @@ class IsAuthenticatedAndInAdminGroup(permissions.BasePermission):
     Allows access only to authenticated users who are in the ADMIN .
     """
     def has_permission(self, request, view):
-        print("rrr",request.user.Role)
+        # print("rrr",request.user.Role)
         if not request.user.is_authenticated:
             return False
         # Check if the user is in the ADMIN 
