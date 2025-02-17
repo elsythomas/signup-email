@@ -72,7 +72,7 @@ def role_create(request):
 @api_view(['POST','GET'])
 def signup(request):
     if request.method == 'GET':
-        return render(request, 'login.html') 
+        return render(request, 'signup.html') 
     
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -144,29 +144,29 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Student
 
-@api_view(['GET', 'POST'])
-def login(request):
-    if request.method == 'GET':
-        return render(request, 'signup.html')  # Show the login page
+# @api_view(['GET', 'POST'])
+# def login(request):
+#     if request.method == 'GET':
+#         return render(request, 'signup.html')  # Show the login page
 
-    if request.method == 'POST':
-        email = request.POST.get('email')  # Use request.POST for Django forms
-        password = request.POST.get('password')
+#     if request.method == 'POST':
+#         email = request.POST.get('email')  # Use request.POST for Django forms
+#         password = request.POST.get('password')
 
-        try:
-            student = Student.objects.get(email=email)
-            if check_password(password, student.password):
-                refresh = RefreshToken.for_user(student)
-                access = refresh.access_token
+#         try:
+#             student = Student.objects.get(email=email)
+#             if check_password(password, student.password):
+#                 refresh = RefreshToken.for_user(student)
+#                 access = refresh.access_token
                 
-                return JsonResponse({
-                    'refresh': str(refresh),
-                    'access': str(access),
-                })
-            else:
-                return JsonResponse({'details': 'Invalid Credentials'}, status=400)
-        except Student.DoesNotExist:
-            return JsonResponse({'details': 'Invalid Credentials'}, status=400)
+#                 return JsonResponse({
+#                     'refresh': str(refresh),
+#                     'access': str(access),
+#                 })
+#             else:
+#                 return JsonResponse({'details': 'Invalid Credentials'}, status=400)
+#         except Student.DoesNotExist:
+#             return JsonResponse({'details': 'Invalid Credentials'}, status=400)
   
 # from django.contrib.auth.hashers import check_password
 # @api_view(['GET','POST'])
@@ -190,10 +190,12 @@ def login(request):
 #         except Student.DoesNotExist:
 #             return Response({'details': 'Invalid Credentials'}, status=400)
 
-#     return render(request, 'signup.html')
-    
-@api_view(['POST'])
+#     return render(request, 'login.html')
+
+@api_view(['POST','GET'])
 def login(request):
+    if request.method == 'GET':
+        return render(request, 'login.html') 
     if request.method == 'POST':
         email = request.POST.get('email')
         password =request.POST.get('password') 
@@ -214,7 +216,12 @@ def login(request):
             return Response (
                 {'details' : 'Invalid Credentials'}
             )    
-    return render(request, 'signup.html')
+    return render(request, 'login.html')
+
+@api_view(['GET'])
+def dashboard_user(request):
+    return render (request, 'dashboard.html')
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Student, Role  # Ensure Role model is imported
