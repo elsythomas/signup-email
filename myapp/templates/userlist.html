@@ -439,3 +439,16 @@
     </script>
 </body>
 </html>
+{% comment %} <!-- Pagination controls -->
+<div class="pagination">
+    {% if page.has_previous %}
+      <a href="?page={{ page.previous_page_number }}">&laquo; Previous</a>
+    {% endif %}
+  
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  
+    {% if page.has_next %}
+      <a href="?page={{ page.next_page_number }}">Next &raquo;</a>
+    {% endif %}
+</div> {% endcomment %}
+

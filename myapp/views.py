@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 
+from myapp.pagination import CustomPagination
 from myproject import settings
 from .models import Admin,Student,Role
 from django.http import HttpResponse, JsonResponse
@@ -316,6 +317,63 @@ def user_list_html(request):
 
 
 
+from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .models import Student  # Import your Student model
+
+def user_list_json(request,page_number=1):
+    user_list = Student.objects.all().values('id', 'name', 'email')  # Select fields to return
+    paginator = Paginator(user_list, 10)  # 5 items per page
+
+    page_number = request.GET.get('page', 2)  # Default to page 1
+    try:
+        page = paginator.page(page_number)
+    except PageNotAnInteger:
+        page = paginator.page(1)
+    except EmptyPage:
+        page = paginator.page(paginator.num_pages)
+
+    # Build JSON-serializable data
+    response_data = {
+        "current_page": page.number,
+        "total_pages": paginator.num_pages,
+        "total_items": paginator.count,
+        "next_page": page.next_page_number() if page.has_next() else None,
+        "previous_page": page.previous_page_number() if page.has_previous() else None,
+        "results": list(page.object_list)  # Already serialized via .values()
+    }
+
+    return JsonResponse(response_data)
+
+# from rest_framework.pagination import PageNumberPagination
+# @api_view(['GET'])
+# def paginated_list(request):
+#     print(f"Request type: {type(request)}") 
+#     queryset =Student.objects.all()
+#     paginator =CustomPagination()
+#     result_page =paginator.paginate_queryset(queryset,request)
+#     serializer = Admin(result_page, many=True)
+#     return paginator.get_paginated_response(serializer.data)
+# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+# def user_list_html(request):
+#     user_list = Student.objects.all()
+#     paginator = Paginator(user_list, 5)  # 10 users per page
+
+#     page_number = request.GET.get('page')
+#     try:
+#         page = paginator.page(page_number)
+#     except PageNotAnInteger:
+#         page = paginator.page(1)
+#     except EmptyPage:
+#         page = paginator.page(paginator.num_pages)
+
+#     # return render(request, 'userlist.html', {
+#     #     "users": page.object_list,  # Pass the paginated users
+    #     "page": page,               # Pass the page object for pagination controls
+    # })
+
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # Ensure the user is authenticated
@@ -491,15 +549,13 @@ from rest_framework.permissions import IsAuthenticated
 
 @api_view(['POST'])
 def student_profile(request):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     student = request.user.Role
-    
-    print(student)
-    return Response ("sucess")
-    return Response({
-         "name": student.name,
-        "email": student.email,
-        "role": student.Role.name if student.Role else None,
+    if student.Role:
+        return Response({
+            "name": student.name,
+            "email": student.email,
+            "role": student.Role.name if student.Role else None,
     })
 
 
@@ -650,9 +706,9 @@ def student_crud(request, student_id=None):
         if not student_id:
             return Response({"error": "Student ID is required for deletion."}, status=status.HTTP_400_BAD_REQUEST)
     try:
-            student = Student.objects.get(id=student_id)  # Use student_id here
-            student.delete()
-            return Response({"message": "Student deleted successfully."})
+        student = Student.objects.get(id=student_id)  # Use student_id here
+        student.delete()
+        return Response({"message": "Student deleted successfully."})
     except Student.DoesNotExist:
      return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 

@@ -3,7 +3,7 @@ from . import views
 # from .views import user_create
 
 from django.contrib.auth.views import LoginView
-from.views import dashboard_user,  add_member,role_create,signup,login,admin_only_api,user_create,user_list_html,admin_crud,role_crud,extract_title,student_crud,user_edit,user_delete,user_list,user_model,get_all_roles,get_role,update_role,delete_role,student_details
+from.views import dashboard_user,user_list_json,add_member,role_create,signup,login,admin_only_api,user_create,user_list_html,admin_crud,role_crud,extract_title,student_crud,user_edit,user_delete,user_list,user_model,get_all_roles,get_role,update_role,delete_role,student_details
 
 # from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 # from .views import login_view, protected_view
@@ -17,6 +17,7 @@ urlpatterns = [
     # path('addmember.html/',add_member,name='addmember.html'),
     # path('login_view/',views.login_view, name='login_view'),
     # # path('login_view/<int:id>/', views.login_view, name='login_view'),
+    path('<int:page_number>/',user_list_json, name='user_list_json'),
     path('add-member/', add_member, name='add_member'),
     path('role-create/', role_create ,name='role_create'),
     path('signup/', signup,  name='signup'),
